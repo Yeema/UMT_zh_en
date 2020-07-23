@@ -142,23 +142,23 @@ python preprocess.py $OUTPATH/vocab $OUTPATH/test.en &
 '''
 ```
 
-6. (optional) make sure you have 10 files in $OUTPATH 
+6. (optional) make sure you have 10 files with exactly same names in $OUTPATH 
 ```
 Monolingual training data:
-    zh: ./data/processed/en-fr/train.zh.pth
-    en: ./data/processed/en-fr/train.en.pth
+    zh: train.zh.pth
+    en: train.en.pth
 Monolingual validation data:
-    zh: ./data/processed/en-fr/valid.zh.pth
-    en: ./data/processed/en-fr/valid.en.pth
+    zh: valid.zh.pth
+    en: valid.en.pth
 Monolingual test data:
-    zh: ./data/processed/en-fr/test.zh.pth
-    en: ./data/processed/en-fr/test.en.pth
+    zh: test.zh.pth
+    en: test.en.pth
 Parallel validation data:
-    zh: ./data/processed/en-fr/valid.zh-en.zh.pth
-    en: ./data/processed/en-fr/valid.zh-en.en.pth
+    zh: valid.zh-en.zh.pth
+    en: valid.zh-en.en.pth
 Parallel test data:
-    zh: ./data/processed/en-fr/test.zh-en.zh.pth
-    en: ./data/processed/en-fr/test.zh-en.en.pth
+    zh: test.zh-en.zh.pth
+    en: test.zh-en.en.pth
 ```
 
 Here, I personally choose to set Monolingual test,validation data same as Parallel one but "Monolingual test,validation data" are indeed parallel corpus.
@@ -311,23 +311,23 @@ python preprocess.py $OUTPATH/vocab $OUTPATH/valid.en &
 python preprocess.py $OUTPATH/vocab $OUTPATH/test.en &
 '''
 ```
-5. (optional) make sure you have 10 files in $OUTPATH 
+5. (optional) make sure you have 10 files with exactly same name in $OUTPATH 
 ```
 Monolingual training data:
-    zh: ./data/processed/en-fr/train.zh.pth
-    en: ./data/processed/en-fr/train.en.pth
+    zh: train.zh.pth
+    en: train.en.pth
 Monolingual validation data:
-    zh: ./data/processed/en-fr/valid.zh.pth
-    en: ./data/processed/en-fr/valid.en.pth
+    zh: valid.zh.pth
+    en: valid.en.pth
 Monolingual test data:
-    zh: ./data/processed/en-fr/test.zh.pth
-    en: ./data/processed/en-fr/test.en.pth
+    zh: test.zh.pth
+    en: test.en.pth
 Parallel validation data:
-    zh: ./data/processed/en-fr/valid.zh-en.zh.pth
-    en: ./data/processed/en-fr/valid.zh-en.en.pth
+    zh: valid.zh-en.zh.pth
+    en: valid.zh-en.en.pth
 Parallel test data:
-    zh: ./data/processed/en-fr/test.zh-en.zh.pth
-    en: ./data/processed/en-fr/test.zh-en.en.pth
+    zh: test.zh-en.zh.pth
+    en: test.zh-en.en.pth
 ```
 
 Here, I personally choose to set Monolingual test,validation data same as Parallel one but "Monolingual test,validation data" are indeed parallel corpus.
