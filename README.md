@@ -4,17 +4,17 @@
 
 ## Main Concept
 Training step is
-1. (monolingual/ multiple monolingual/ parallel monolingual) LM
+1. training LM on monolingual/ multiple monolingual/ parallel monolingual corpus
   1. preparing training data in the format of one sentence one line. Avoid too long sentences or please setting ```--bptt``` when you run train.py.
   2. applying BPE (Byte Pair Encoding).
   3. binarizing BPE sentences.
   4. training your own bert model.
 2. fintuning a specific case like UMT **baed on pretrained** LM
-  1. training UMT model using pretrined XLM(https://github.com/Yeema/XLM/blob/master/ORIGINAL_README.md#pretrained-cross-lingual-language-models) or your own LM
+  1. training UMT model using pretrined [XLM](https://github.com/Yeema/XLM/blob/master/ORIGINAL_README.md#pretrained-cross-lingual-language-models) or your own LM
   2. [translating](https://github.com/Yeema/XLM/blob/master/train.py)
 
 ## Unsupervised Machine Translation without parallel data but only with  monolingual data (MLM)
-In what follows we explain how you can train your own cross-lingual BERT model or use pretrained XLM(https://github.com/Yeema/XLM/blob/master/ORIGINAL_README.md#pretrained-cross-lingual-language-models) weights. Then we explain how you can train your own monolingual model. In [ORIGINAL_README](https://github.com/Yeema/XLM/blob/master/ORIGINAL_README.md), it shows how to train monolingual BERT model.
+In what follows we explain how you can train your own cross-lingual BERT model or use [pretrained XLM](https://github.com/Yeema/XLM/blob/master/ORIGINAL_README.md#pretrained-cross-lingual-language-models) weights. Then we explain how you can train your own monolingual model. In [ORIGINAL_README](https://github.com/Yeema/XLM/blob/master/ORIGINAL_README.md), it shows how to train monolingual BERT model.
 
 ### Train your own cross-lingual BERT model with multiple monolingual dataset
 Now in what follows, we will explain how you can train an XLM model on your own data.
