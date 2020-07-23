@@ -113,7 +113,8 @@ mv $OUTPATH/valid1.en $OUTPATH/valid.en
 
 4. and **get** the post-BPE **vocabulary**:
 ```
-cat $OUTPATH/train.zh $OUTPATH/train.en | $FASTBPE getvocab - > $OUTPATH/vocab &
+$VOCAB=vocab
+cat $OUTPATH/train.zh $OUTPATH/train.en | $FASTBPE getvocab - > $OUTPATH/$VOCAB &
 ```
 
 5. **Binarize the data** to limit the size of the data we load in memory: input xxx output xxx.path
@@ -124,7 +125,7 @@ for lg in $(echo $pair | sed -e 's/\-/ /g'); do
   for split in train valid test; do
     FILE=$RAW_DATA_PATH/tokenized_$split.$lg
     if [ -f "$FILE" ]; then
-        python preprocess.py $OUTPATH/vocab $OUTPATH/$split.$lg &
+        python preprocess.py $OUTPATH/$VOCAB $OUTPATH/$split.$lg &
     else
         echo "$FILE does not exist."
     fi
@@ -132,17 +133,17 @@ for lg in $(echo $pair | sed -e 's/\-/ /g'); do
 done
 ''' 
 # equals to the following
-python preprocess.py $OUTPATH/vocab $OUTPATH/train.zh &
-python preprocess.py $OUTPATH/vocab $OUTPATH/valid.zh &
-python preprocess.py $OUTPATH/vocab $OUTPATH/test.zh &
+python preprocess.py $OUTPATH/$VOCAB $OUTPATH/train.zh &
+python preprocess.py $OUTPATH/$VOCAB $OUTPATH/valid.zh &
+python preprocess.py $OUTPATH/$VOCAB $OUTPATH/test.zh &
 
-python preprocess.py $OUTPATH/vocab $OUTPATH/train.en &
-python preprocess.py $OUTPATH/vocab $OUTPATH/valid.en &
-python preprocess.py $OUTPATH/vocab $OUTPATH/test.en &
+python preprocess.py $OUTPATH/$VOCAB $OUTPATH/train.en &
+python preprocess.py $OUTPATH/$VOCAB $OUTPATH/valid.en &
+python preprocess.py $OUTPATH/$VOCAB $OUTPATH/test.en &
 '''
 ```
 
-6. (optional) make sure you have 10 files with exactly same names in $OUTPATH 
+6. (optional) make sure you have 10 files with exactly **same names** in $OUTPATH 
 ```
 Monolingual training data:
     zh: train.zh.pth
@@ -314,7 +315,7 @@ python preprocess.py $OUTPATH/vocab_xnli_17 $OUTPATH/valid.en &
 python preprocess.py $OUTPATH/vocab_xnli_17 $OUTPATH/test.en &
 '''
 ```
-5. (optional) make sure you have 10 files with exactly same name in $OUTPATH 
+5. (optional) make sure you have 10 files with exactly  **same name** in $OUTPATH 
 ```
 Monolingual training data:
     zh: train.zh.pth
@@ -355,6 +356,13 @@ XLMs can be used as a pretraining method for unsupervised or supervised neural m
 ### Train on unsupervised MT **from a pretrained model**
 
 Using your pretrained LM weight
+
+personal script
+```
+CUDA_VISIBLE_DEVICES=7 nohup python train.py --exp_name test_zhen_mlm --dump_path /raid/yihui/titles/mlm --data_path /raid/yihui/titles/XLM_zhen/  --lgs 'zh-en' --clm_steps '' --mlm_steps 'zh,en' --emb_dim 1024 --n_layers 6 --n_heads 8 --dropout 0.1 --attention_dropout 0.1 --gelu_activation true --batch_size 32 --bptt 256 --optimizer adam,lr=0.0001 --epoch_size 200000 --validation_metrics _valid_mlm_ppl --stopping_criterion _valid_mlm_ppl,15 &> mlm.out&
+```
+
+parameter description
 ```
 python train.py 
 --exp_name unsupMT_zhen 
@@ -390,7 +398,17 @@ Using downloaded pretrained weight
 2. --max_vocab 200000 can gaurantee the number of unique words can be fed into the current model
 3. --epoch_size is the number of sentences can be trained in an epoch so don't set it so small that the model couldn't learn well
 
+personal script
 ```
+OUTPATH=/raid/yihui/titles/mlm17
+
+CUDA_VISIBLE_DEVICES=2 nohup python train.py --exp_name unsupMT_zhen --dump_path /raid/yihui/titles/mlm17 --reload_model '/raid/yihui/titles/mlm17/mlm_17_1280.pth,/raid/yihui/titles/mlm17/mlm_17_1280.pth' --max_vocab 200000 --data_path $OUTPATH --lgs 'zh-en' --ae_steps 'zh,en' --bt_steps 'zh-en-zh,en-zh-en' --word_shuffle 3 --word_dropout 0.1 --word_blank 0.1 --lambda_ae '0:1,100000:0.1,300000:0' --encoder_only false --emb_dim 1280 --n_layers 6 --n_heads 8 --dropout 0.1 --attention_dropout 0.1 --eval_bleu true --gelu_activation true --batch_size 32 --bptt 256 --optimizer adam_inverse_sqrt,lr=0.00010,warmup_updates=30000,beta1=0.9,beta2=0.999,weight_decay=0.01,eps=0.000001 --epoch_size 200000 --stopping_criterion 'valid_zh-en_mt_bleu,10' --validation_metrics 'valid_zh-en_mt_bleu' --beam_size 3 &> beamnewdata.out &
+```
+
+parameter description
+```
+OUTPATH=/raid/yihui/titles/mlm17
+
 python train.py
 
 ## main parameters
@@ -440,9 +458,9 @@ test_fr-en_mt_bleu  -> 34.02
 test_en-fr_mt_bleu  -> 36.62
 ```
 
-## Frequently Asked Questions
+## Problems I have ever encountered
 
-### How can I run experiments on multiple GPUs?
+### Run experiments on multiple GPUs?
 
 XLM supports both multi-GPU and multi-node training, and was tested with up to 128 GPUs. To run an experiment with multiple GPUs on a single machine, simply replace `python train.py` in the commands above with:
 
@@ -451,6 +469,98 @@ export NGPU=8; python -m torch.distributed.launch --nproc_per_node=$NGPU train.p
 ```
 
 The multi-node is automatically handled by SLURM.
+
+### [AssertionError in training unsupervised MT](https://github.com/facebookresearch/XLM/issues/201)
+Training script is like showing below
+```
+python train.py --exp_name unsupMT_zh-en --dump_path ./dumped/ --reload_model 'best-valid_mlm_ppl.pth,best-valid_mlm_ppl.pth' --data_path path/to/data --lgs 'zh-en' --ae_steps 'zh,en' --word_dropout 0.1 --word_blank 0.1 --word_shuffle 3 --lambda_ae '0:1,100000:0.1,300000:0' --encoder_only false --emb_dim 512 --n_layers 6 --n_heads 8 --dropout 0.1 --attention_dropout 0.1 --gelu_activation true --batch_size 32 --bptt 256 --optimizer adam_inverse_sqrt,beta1=0.9,beta2=0.98,lr=0.0001 --epoch_size 200000 --stopping_criterion 'valid_zh-en_mt_bleu,10' --validation_metrics 'valid_zh-en_mt_bleu'
+```
+
+Error
+```
+WARNING - 09/16/19 15:22:29 - 0:11:28 - Metric "valid_zh-en_mt_bleu" not found in scores!
+Traceback (most recent call last):
+File "train.py", line 327, in 
+main(params)
+File "train.py", line 306, in main
+trainer.end_epoch(scores)
+File "XLM/src/trainer.py", line 598, in end_epoch
+assert metric in scores, metric
+AssertionError: valid_zh-en_mt_bleu
+```
+sol: AssertionError: valid_zh-en_mt_bleu means that you told the script to save the best model based on the valid_zh-en_mt_bleu metric: --validation_metrics 'valid_zh-en_mt_bleu'. But if you don't evaluate BLEU --eval_bleu false, this metric will not exist at the end of each epoch, and the model cannot use it so it will raise an error.
+
+### Unexpected key(s) in state_dict/KeyError in load_state_dict
+
+```
+Traceback (most recent call last):
+  File "train.py", line 327, in <module>
+    main(params)
+  File "train.py", line 234, in main
+    model = build_model(params, data['dico'])
+  **File "/home/ubuntu/GitHub/XLM (copy)/src/model/__init__.py", line 134, in build_model
+    model.load_state_dict(reloaded)**
+  File "/home/ubuntu/miniconda3/envs/pyt/lib/python3.6/site-packages/torch/nn/modules/module.py", line 830, in load_state_dict
+    self.__class__.__name__, "\n\t".join(error_msgs)))
+RuntimeError: Error(s) in loading state_dict for TransformerModel:
+	Missing key(s) in state_dict: "lang_embeddings.weight". 
+	Unexpected key(s) in state_dict: "attentions.12.q_lin.weight", "attentions.12.q_lin.bias", "attentions.12.k_lin.weight", "attentions.12.k_lin.bias", "attentions.12.v_lin.weight", "attentions.12.v_lin.bias", "attentions.12.out_lin.weight", "attentions.12.out_lin.bias", "attentions.13.q_lin.weight", "attentions.13.q_lin.bias", "attentions.13.k_lin.weight", "attentions.13.k_lin.bias", "attentions.13.v_lin.weight", "attentions.13.v_lin.bias", "attentions.13.out_lin.weight", "attentions.13.out_lin.bias", "attentions.14.q_lin.weight", "attentions.14.q_lin.bias", "attentions.14.k_lin.weight", "attentions.14.k_lin.bias", "attentions.14.v_lin.weight", "attentions.14.v_lin.bias", "attentions.14.out_lin.weight", "attentions.14.out_lin.bias", "attentions.15.q_lin.weight", "attentions.15.q_lin.bias", "attentions.15.k_lin.weight", "attentions.15.k_lin.bias", "attentions.15.v_lin.weight", "attentions.15.v_lin.bias", "attentions.15.out_lin.weight", "attentions.15.out_lin.bias", "layer_norm1.12.weight", "layer_norm1.12.bias", "layer_norm1.13.weight", "layer_norm1.13.bias", "layer_norm1.14.weight", "layer_norm1.14.bias", "layer_norm1.15.weight", "layer_norm1.15.bias", "ffns.12.lin1.weight", "ffns.12.lin1.bias", "ffns.12.lin2.weight", "ffns.12.lin2.bias", "ffns.13.lin1.weight", "ffns.13.lin1.bias", "ffns.13.lin2.weight", "ffns.13.lin2.bias", "ffns.14.lin1.weight", "ffns.14.lin1.bias", "ffns.14.lin2.weight", "ffns.14.lin2.bias", "ffns.15.lin1.weight", "ffns.15.lin1.bias", "ffns.15.lin2.weight", "ffns.15.lin2.bias", "layer_norm2.12.weight", "layer_norm2.12.bias", "layer_norm2.13.weight", "layer_norm2.13.bias", "layer_norm2.14.weight", "layer_norm2.14.bias", "layer_norm2.15.weight", "layer_norm2.15.bias". 
+```
+sol: modify ```load_state_dict(reloaded) to be load_state_dict(reloaded, strict=False)```
+
+### (MT/UMT model training from pretrained model (Vector size mismatch))[https://github.com/facebookresearch/XLM/issues/144]
+When you are training an MT/UMT model, if there's error like ...
+```
+size mismatch for embeddings.weight: copying a param with shape torch.Size([64139, 1024]) from checkpoint, the shape in current model is torch.Size([60374, 1024]).
+size mismatch for pred_layer.proj.weight: copying a param with shape torch.Size([64139, 1024]) from checkpoint, the shape in current model is torch.Size([60374, 1024]).
+size mismatch for pred_layer.proj.bias: copying a param with shape torch.Size([64139]) from checkpoint, the shape in current model is torch.Size([60374]).
+```
+
+sol: setting --max_vocab 200000 according to your current model size
+
+### [After running translate.py, there are many '@' in result file](https://github.com/facebookresearch/XLM/issues/269)
+sol: (s + ' ').replace('@@', '').rstrip() on the output string s.
+
+### [enhance bleu score](https://github.com/facebookresearch/XLM/issues/39)
+1. Fix the [language model quality](https://github.com/facebookresearch/XLM/blob/master/generate-embeddings.ipynb) by checking whether tokens learn representation correctly
+2. Check data preprocessing
+3. Follow original script's hyper-parameter setting. For example, ```epoch_size``` is **the number of sentences tained in an epoch** instead of the number of epochs in the training; if ```--n_heads``` is different from pretrained model might also lead bad performance; ```--attention_dropout 0.2``` is big (0 to 0.1 is better); ```--batch_size 16``` is small, the bigger the more stable the model will be.
+4. Give it more time and alleviate stopping criteria
+
+### How's performance 
+Check log's ppl value, more than 100 might be abnormal
+
+### [Translation error: Missing key(s) in state_dict: "pred_layer.proj.bias", "pred_layer.proj.weight"](https://github.com/facebookresearch/XLM/issues/65)
+in translate.py:
+
+```
+# modify
+encoder.load_state_dict(reloaded['encoder'])
+# to
+if all([k.startswith('module.') for k in reloaded['encoder'].keys()]):
+  enc_reload = {k[len('module.'):]: v for k, v in reloaded['encoder'].items()}
+  encoder.load_state_dict(enc_reload)
+else:
+  encoder.load_state_dict(reloaded['encoder'])
+
+# modify
+encoder = TransformerModel(params, dico, is_encoder=True, with_output=True)
+# to
+encoder = TransformerModel(params, dico, is_encoder=True, with_output=False)
+```
+
+in src/model/__init__.py:
+```
+# modify
+encoder = TransformerModel(params, dico, is_encoder=True, with_output=True)
+# to
+encoder = TransformerModel(params, dico, is_encoder=True, with_output=False)
+```
+Setting ```with_output=False``` means that you are trying to reload a component that requires to have an output layer, when the reloaded model does not have any output layer. Can you try to set with_output=False for the encoder here.
+
+### [Divergence in self-pretraining model](https://github.com/facebookresearch/XLM/issues/244)
+
+### [Warning Parameter not found](https://github.com/facebookresearch/XLM/issues/222)
 
 ## References
 
