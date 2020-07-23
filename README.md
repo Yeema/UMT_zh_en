@@ -531,6 +531,8 @@ sol: (s + ' ').replace('@@', '').rstrip() on the output string s.
 Check log's ppl value, more than 100 might be abnormal
 
 ### [Translation error: Missing key(s) in state_dict: "pred_layer.proj.bias", "pred_layer.proj.weight"](https://github.com/facebookresearch/XLM/issues/65)
+In the following, please setting it to be original when training. Those modifications are only for translating.
+
 in translate.py:
 
 ```
