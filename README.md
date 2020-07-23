@@ -20,7 +20,7 @@ In what follows we explain how you can train your own cross-lingual BERT model o
 Now in what follows, we will explain how you can train an XLM model on your own data.
 
 ### 1. Preparing the data
-First, get the multiple [monolingual corpus]().
+First, get the multiple [monolingual corpus](https://github.com/Yeema/XLM/tree/master/product-title-translation-corpus).
 
 Transform from csv to ***one sentence one line*** format.
 ```
