@@ -14,7 +14,7 @@ Training step is
   2. [translating](https://github.com/Yeema/XLM/blob/master/train.py)
 
 ## Unsupervised Machine Translation without parallel data but only with  monolingual data (MLM)
-In what follows we explain how you can train your own cross-lingual BERT model or use [pretrained XLM](https://github.com/Yeema/XLM/blob/master/ORIGINAL_README.md#pretrained-cross-lingual-language-models) weights. Then we explain how you can train your own monolingual model. In [ORIGINAL_README](https://github.com/Yeema/XLM/blob/master/ORIGINAL_README.md), it shows how to train monolingual BERT model.
+In what follows we explain how you can train your own cross-lingual BERT model on multiple monolingual corpus or use [pretrained XLM](https://github.com/Yeema/XLM/blob/master/ORIGINAL_README.md#pretrained-cross-lingual-language-models) weights. In [ORIGINAL_README](https://github.com/Yeema/XLM/blob/master/ORIGINAL_README.md), it shows how to train monolingual BERT model.
 
 ### Train your own cross-lingual BERT model with multiple monolingual dataset
 Now in what follows, we will explain how you can train an XLM model on your own data.
@@ -251,6 +251,8 @@ wget -c https://dl.fbaipublicfiles.com/XLM/vocab_xnli_17
 
 3. Now **apply BPE** encoding to all files (train/valid/test):
 ```
+cd ~/XLM #go to XLM directory
+FASTBPE=tools/fastBPE/fast
 pair=zh-en
 CODE=codes_xnli_17
 for lg in $(echo $pair | sed -e 's/\-/ /g'); do
@@ -282,7 +284,7 @@ tail -n 5 $OUTPATH/valid.zh > $OUTPATH/test.zh
 tail -n 5 $OUTPATH/valid.en > $OUTPATH/test.en
 head -n 995 $OUTPATH/valid.zh > $OUTPATH/valid1.zh
 mv $OUTPATH/valid1.zh $OUTPATH/valid.zh
-head -n 995 $OUTPATH/valid.en > $OUTPATH/valid1en
+head -n 995 $OUTPATH/valid.en > $OUTPATH/valid1.en
 mv $OUTPATH/valid1.en $OUTPATH/valid.en
 ```
 
@@ -290,11 +292,12 @@ mv $OUTPATH/valid1.en $OUTPATH/valid.en
 ```
 # This will create three files: $OUTPATH/{train,valid,test}.{zh,en}.pth
 # After that we're all set
+VOCAB=vocab_xnli_17
 for lg in $(echo $pair | sed -e 's/\-/ /g'); do
   for split in train valid test; do
-    FILE=$RAW_DATA_PATH/tokenized_$split.$lg
+    FILE=$OUTPATH/$split.$lg
     if [ -f "$FILE" ]; then
-        python preprocess.py $OUTPATH/vocab $OUTPATH/train.zh &
+        python preprocess.py $OUTPATH/$VOCAB $FILE&
     else
         echo "$FILE does not exist."
     fi
@@ -302,13 +305,13 @@ for lg in $(echo $pair | sed -e 's/\-/ /g'); do
 done
 ''' 
 # equals to the following
-python preprocess.py $OUTPATH/vocab $OUTPATH/train.zh &
-python preprocess.py $OUTPATH/vocab $OUTPATH/valid.zh &
-python preprocess.py $OUTPATH/vocab $OUTPATH/test.zh &
+python preprocess.py $OUTPATH/vocab_xnli_17 $OUTPATH/train.zh &
+python preprocess.py $OUTPATH/vocab_xnli_17 $OUTPATH/valid.zh &
+python preprocess.py $OUTPATH/vocab_xnli_17 $OUTPATH/test.zh &
 
-python preprocess.py $OUTPATH/vocab $OUTPATH/train.en &
-python preprocess.py $OUTPATH/vocab $OUTPATH/valid.en &
-python preprocess.py $OUTPATH/vocab $OUTPATH/test.en &
+python preprocess.py $OUTPATH/vocab_xnli_17 $OUTPATH/train.en &
+python preprocess.py $OUTPATH/vocab_xnli_17 $OUTPATH/valid.en &
+python preprocess.py $OUTPATH/vocab_xnli_17 $OUTPATH/test.en &
 '''
 ```
 5. (optional) make sure you have 10 files with exactly same name in $OUTPATH 
