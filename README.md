@@ -60,6 +60,46 @@ cat $RAW_DATA_PATH/dev.$lg | ./tools/tokenize.sh $lg > $RAW_DATA_PATH/tokenized_
 cat $RAW_DATA_PATH/test.$lg | ./tools/tokenize.sh $lg > $RAW_DATA_PATH/tokenized_test.$lg &
 cat $RAW_DATA_PATH/train.$lg | ./tools/tokenize.sh $lg > $RAW_DATA_PATH/tokenized_train.$lg &
 ```
+However, for mainly traditional training data, I choose to tokenzie sentences using [ckiptagger](https://github.com/ckiplab/ckiptagger) instead of StandfordTagger or Jieba.
+
+Therefore, here's the change in XLM/tools/tokenize.sh
+```
+# Chinese
+if [ "$lg" = "zh" ]; then
+  #$TOOLS_PATH/stanford-segmenter-*/segment.sh pku /dev/stdin UTF-8 0 | $REPLACE_UNICODE_PUNCT | $NORM_PUNC -l $lg | $REM_NON_PRINT_CHAR
+  cat - | python /home/yihui/ckiptagger/ckip_tokenize.py | $REPLACE_UNICODE_PUNCT | $NORM_PUNC -l $lg | $REM_NON_PRINT_CHAR
+```
+
+The following is the code of ckip_tokenize.py. ```/raid/yihui/chinese/ckiptagger/data``` is the path of [ckiptagger dictionary](https://github.com/ckiplab/ckiptagger#1-download-model-files). 
+```
+import os
+import sys
+import re
+from ckiptagger import construct_dictionary, WS
+
+def main():
+    # Load model without GPU by setting disable_cuda=False
+    ws = WS("/raid/yihui/chinese/ckiptagger/data",disable_cuda=False)
+
+    for sentence in sys.stdin.readlines():
+        sent_splits = []
+        sentence = sentence.strip()
+        # split by space in the original sentence first
+        # Usage: wc(list_object)
+        res = ws(re.findall(r'\S+', sentence))
+        tokens = []
+        for r in res:
+            tokens.extend(r)
+        print(' '.join([t.strip() for t in tokens if t.strip()]))
+
+    # Release model
+    del ws
+    return
+
+if __name__ == "__main__":
+    main()
+    sys.exit()
+```
 
 2. [Install fastBPE](https://github.com/facebookresearch/XLM/tree/master/tools#fastbpe) under the directory of XLM and **learn BPE** vocabulary (with 350000 codes here) of multiple monolingual sentences from training set: You can decide codes number on your own but larger codes longer producing time.
 ```
@@ -470,6 +510,8 @@ export NGPU=8; python -m torch.distributed.launch --nproc_per_node=$NGPU train.p
 
 The multi-node is automatically handled by SLURM.
 
+However, multi-gpus might be slower than single gpu due to [HW specification](https://github.com/facebookresearch/XLM/issues/189).
+
 ### [AssertionError in training unsupervised MT](https://github.com/facebookresearch/XLM/issues/201)
 Training script is like showing below
 ```
@@ -524,7 +566,7 @@ sol: (s + ' ').replace('@@', '').rstrip() on the output string s.
 ### [enhance bleu score](https://github.com/facebookresearch/XLM/issues/39)
 1. Fix the [language model quality](https://github.com/facebookresearch/XLM/blob/master/generate-embeddings.ipynb) by checking whether tokens learn representation correctly
 2. Check data preprocessing
-3. Follow original script's hyper-parameter setting. For example, ```epoch_size``` is **the number of sentences tained in an epoch** instead of the number of epochs in the training; if ```--n_heads``` is different from pretrained model might also lead bad performance; ```--attention_dropout 0.2``` is big (0 to 0.1 is better); ```--batch_size 16``` is small, the bigger the more stable the model will be.
+3. Follow original script's hyper-parameter setting. For example, ```epoch_size``` is **the number of sentences tained in an epoch** instead of the number of epochs in the training; if ```--n_heads``` is different from pretrained model might also lead bad performance; ```--attention_dropout 0.2``` is big (0 to 0.1 is better); ```--batch_size 16``` is small, the bigger the more **stable** the model will be.
 4. Give it more time and alleviate stopping criteria
 
 ### How's performance 
