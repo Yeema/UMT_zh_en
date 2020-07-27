@@ -1,6 +1,11 @@
 # CkipTagger
 Also: [中文 README](https://github.com/ckiplab/ckiptagger/wiki/Chinese-README)
 
+#### USAGE
+```
+cat [input_filename] | python ckip_tokenize.py > [output_filename]
+```
+
 #### GitHub
 
 https://github.com/ckiplab/ckiptagger
