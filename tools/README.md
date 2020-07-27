@@ -30,6 +30,19 @@ Chinese Stanford segmenter:
 wget https://nlp.stanford.edu/software/stanford-segmenter-2018-10-16.zip
 unzip stanford-segmenter-2018-10-16.zip
 ```
+Chinese [ckiptagger](https://github.com/ckiplab/ckiptagger):
+```
+# if you have tensorflow
+pip install -U ckiptagger[tf,gdown]
+
+# (Complete installation) If you have just set up a clean virtual environment, and want everything, including GPU support
+pip install -U ckiptagger[tfgpu,gdown]
+```
+CkipTagger is a Python library hosted on PyPI. Requirements:
+
+- python>=3.6
+- tensorflow>=1.13.1,<2 / tensorflow-gpu>=1.13.1,<2 (one of them)
+- gdown (optional, for **downloading** model files from **google drive**)
 
 ## fastBPE
 
