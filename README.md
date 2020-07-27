@@ -1,4 +1,4 @@
-# XLM mainly focused on unsupervised machine translation
+# XLM, this project mainly focused on unsupervised machine translation for ecommerce product titles from zh to en 
 
 **Notice:** Read [original readme](https://github.com/Yeema/XLM/blob/master/ORIGINAL_README.md) for installation first.
 
